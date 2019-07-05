@@ -2,13 +2,23 @@ package com.springbatch.poc.springbatchpoc.model;
 
 import java.io.Serializable;
 
-public class User implements Serializable{
+public class Person implements Serializable{
 
     private static final long serialVersionUID = 1L;
 
     private Integer id;
     private String name;
     private String city;
+
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    private String timestamp;
 
     public Integer getId() {
         return id;
