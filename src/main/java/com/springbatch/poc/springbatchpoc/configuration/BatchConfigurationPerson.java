@@ -1,6 +1,7 @@
-package com.springbatch.poc.springbatchpoc;
+package com.springbatch.poc.springbatchpoc.configuration;
 
 
+import com.springbatch.poc.springbatchpoc.PersonItemProcessor;
 import com.springbatch.poc.springbatchpoc.model.Person;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -11,54 +12,44 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.data.MongoItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @Configuration
 @EnableBatchProcessing
-public class BatchConfiguration {
-
-    @Autowired
-    public JobBuilderFactory jobBuilderFactory;
-
-    @Autowired
-    public StepBuilderFactory stepBuilderFactory;
-
-    @Autowired
-    public DataSource dataSource;
+public class BatchConfigurationPerson {
 
     @Autowired
     private MongoTemplate mongoTemplate;
 
 
     @Bean
-    public DataSource dataSource() {
-        final DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-        dataSource.setUrl("jdbc:sqlserver://10.210.16.46:1433;databaseName=maxbupa;integratedSecurity=false;");
-        dataSource.setUsername("sa");
-        dataSource.setPassword("citytech");
-        return dataSource;
+    public DataSource dataSourcePerson() {
+        DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
+        dataSourceBuilder.driverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        dataSourceBuilder.url("jdbc:sqlserver://10.210.16.46:1433;databaseName=maxbupa;integratedSecurity=false;");
+        dataSourceBuilder.username("sa");
+        dataSourceBuilder.password("citytech");
+        return dataSourceBuilder.build();
     }
 
-    @Bean
+    @Bean(destroyMethod="")
     public JdbcCursorItemReader<Person> reader(){
         JdbcCursorItemReader<Person> reader = new JdbcCursorItemReader<Person>();
-        reader.setDataSource(dataSource);
+        reader.setDataSource(dataSourcePerson());
         reader.setSql("SELECT id, name, city, timestamp FROM person;");
-        reader.setRowMapper(new UserRowMapper());
-
+        reader.setRowMapper(new PersonRowMapper());
         return reader;
     }
 
-    public class UserRowMapper implements RowMapper<Person> {
+    public class PersonRowMapper implements RowMapper<Person> {
 
         @Override
         public Person mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -74,8 +65,8 @@ public class BatchConfiguration {
     }
 
     @Bean
-    public UserItemProcessor processor(){
-        return new UserItemProcessor();
+    public PersonItemProcessor processor(){
+        return new PersonItemProcessor();
     }
 
     @Bean
@@ -87,7 +78,7 @@ public class BatchConfiguration {
     }
 
     @Bean
-    public Step step1() {
+    public Step step1(StepBuilderFactory stepBuilderFactory) {
         return stepBuilderFactory.get("step1").<Person, Person> chunk(10)
                 .reader(reader())
                 .processor(processor())
@@ -96,10 +87,10 @@ public class BatchConfiguration {
     }
 
     @Bean
-    public Job exportPersonJob() {
-        return jobBuilderFactory.get("exportPersonJob")
+    public Job exportPersonJob(JobBuilderFactory personJob, Step step1) {
+        return personJob.get("exportPersonJob")
                 .incrementer(new RunIdIncrementer())
-                .flow(step1())
+                .flow(step1)
                 .end()
                 .build();
     }

@@ -3,10 +3,10 @@ package com.springbatch.poc.springbatchpoc;
 import com.springbatch.poc.springbatchpoc.model.Person;
 import org.springframework.batch.item.ItemProcessor;
 
-public class UserItemProcessor implements ItemProcessor<Person, Person> {
+public class PersonItemProcessor implements ItemProcessor<Person, Person> {
 
     @Override
-    public Person process(Person user) throws Exception {
-        return user;
+    public Person process(Person person) throws Exception {
+        return person;
     }
 }
