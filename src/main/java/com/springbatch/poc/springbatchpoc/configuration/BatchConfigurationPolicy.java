@@ -8,11 +8,11 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.data.MongoItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -21,6 +21,7 @@ import org.springframework.jdbc.core.RowMapper;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 
 @Configuration
 @EnableBatchProcessing
@@ -29,21 +30,14 @@ public class BatchConfigurationPolicy {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-
-    @Bean
-    public DataSource dataSource() {
-        DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
-        dataSourceBuilder.driverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-        dataSourceBuilder.url("jdbc:sqlserver://10.210.16.46:1433;databaseName=maxbupa;integratedSecurity=false;");
-        dataSourceBuilder.username("sa");
-        dataSourceBuilder.password("citytech");
-        return dataSourceBuilder.build();
-    }
+    @Autowired
+    DataSource dataSource;
 
     @Bean(destroyMethod="")
+    @StepScope
     public JdbcCursorItemReader<Policy> policyReader(){
         JdbcCursorItemReader<Policy> reader = new JdbcCursorItemReader<Policy>();
-        reader.setDataSource(dataSource());
+        reader.setDataSource(dataSource);
         reader.setSql("SELECT policy_number, policy_type, timestamp FROM policy;");
         reader.setRowMapper(new BatchConfigurationPolicy.PolicyRowMapper());
         return reader;
@@ -78,6 +72,7 @@ public class BatchConfigurationPolicy {
 
     @Bean
     public Step policyStep1(StepBuilderFactory stepBuilderFactory) {
+        System.out.println("Policy export Job Started at :" + new Date());
         return stepBuilderFactory.get("step1").<Policy, Policy> chunk(10)
                 .reader(policyReader())
                 .processor(policyProcessor())
