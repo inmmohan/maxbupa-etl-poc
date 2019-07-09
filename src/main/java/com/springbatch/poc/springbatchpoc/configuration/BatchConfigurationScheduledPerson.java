@@ -89,7 +89,7 @@ public class BatchConfigurationScheduledPerson {
     public JdbcCursorItemReader<Person> scheduledReader(){
         JdbcCursorItemReader<Person> reader = new JdbcCursorItemReader<Person>();
         reader.setDataSource(dataSource);
-        reader.setSql("SELECT id, name, city, timestamp FROM person;");
+        reader.setSql("SELECT ID, name, city, timestamp FROM person WHERE timestamp >= CURRENT_TIMESTAMP - 15;");
         reader.setRowMapper(new PersonRowMapper());
         return reader;
     }
